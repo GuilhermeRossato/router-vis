@@ -12,7 +12,7 @@ attachLogToConsole(logFilePath);
 async function init() {
   console.log('Started client script');
   const status = await checkExtractionServer();
-  console.log('Client script got status');
+  console.log('Client script got status:');
   console.log(status);
 }
 

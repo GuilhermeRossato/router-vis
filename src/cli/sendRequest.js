@@ -19,7 +19,6 @@ export default async function sendRequest(data) {
       },
     });
     client.on("error", (err) => {
-      console.log(err);
       resolve({
         stage: "network",
         error: err.stack,
@@ -32,7 +31,6 @@ export default async function sendRequest(data) {
         try {
           return resolve(JSON.parse(text));
         } catch (err) {
-          console.log(err);
           return resolve({
             error: "Could not parse server response",
             stage: "response",

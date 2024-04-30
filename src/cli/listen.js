@@ -15,14 +15,21 @@ export default function listen(handler) {
       req.on("data", (data) => chunks.push(data));
       req.on("end", () => {
         const text = Buffer.concat(chunks).toString("utf-8");
+        if (!text || text[0] !== '{') {
+          res.statusCode = 500; 
+          res.end(JSON.stringify({
+            error: "Invalid data prefix"
+          }));
+          return;
+        }
         try {
           const obj = JSON.parse(text);
           handler(obj).then(
-            (data) => { res.end(JSON.stringify(data)); },
-            (err) => { res.statusCode = 500; res.end(JSON.stringify({ error: err.stack })) },
+            (data) => { console.log('Received', JSON.stringify(obj), 'Reply', JSON.stringify(data)); res.end(JSON.stringify(data)); },
+            (err) => { console.log('Received', JSON.stringify(obj), 'Threw', JSON.stringify(err)); res.statusCode = 500; res.end(JSON.stringify({ error: err.stack })) },
           );
         } catch (err) {
-          console.log(res);
+          console.log(err.stack);
           res.statusCode = 500; 
           res.end(JSON.stringify({
             error: "Invalid data"

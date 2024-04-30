@@ -3,14 +3,16 @@ import sendRequest from "./sendRequest.js";
 import startDetachedServer from "./startDetachedServer.js";
 
 export default async function checkExtractionServer() {
-  const send = sendRequest.bind(null, {
-    type: 'status',
+  const obj = {
+    type: 'init',
     cwd: process.cwd(),
     pid: process.pid,
     argv: process.argv
-  });
+  };
+  const send = sendRequest.bind(null, obj);
 
   let status = await send();
+  obj.type = 'status';
   if (status.error && status.stage === "network") {
     console.log("Initializing detached extraction server");
     startDetachedServer();
