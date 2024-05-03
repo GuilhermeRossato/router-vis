@@ -147,6 +147,10 @@ async function getPersistVarRecordActions(
         "time",
         "extractionInterval",
         "extractionPeriod",
+        "extractionInterval1",
+        "extractionPeriod1",
+        "extractionInterval2",
+        "extractionPeriod2",
         "uptimeInterval",
         "uptime",
       ].includes(varName)
@@ -393,7 +397,6 @@ export default async function executeExtractionLoop(isLoopMode = true) {
       resp.date
     );
     await persistVarRecord(prevRec, newRec, true);
-    console.log(newRec);
   }
   async function updateStatisticsData() {
     const resp = await getStatisticsVars(sessionId);
@@ -414,7 +417,7 @@ export default async function executeExtractionLoop(isLoopMode = true) {
       resp.date
     );
     await persistVarRecord(prevRec, newRec, true);
-    console.log(newRec);
+    // console.log(newRec);
   }
   async function tick() {
     console.log("Fetching", isNextStatus ? "status" : "statistics");
