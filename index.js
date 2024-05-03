@@ -5,7 +5,6 @@ import sendRequest from "./src/cli/sendRequest.js";
 import getOptionsFromArgumentList from "./src/cli/getOptionsFromArgumentList.js";
 import sleep from "./src/utils/sleep.js";
 import executeExtractionLoop from "./src/executeExtractionLoop.js";
-import executeDetachedProcess from "./src/utils/executeDetachedCommand.js";
 import executeDetachedCommand from "./src/utils/executeDetachedCommand.js";
 
 let debug = false;

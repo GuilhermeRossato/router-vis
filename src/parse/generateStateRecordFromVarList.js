@@ -53,7 +53,6 @@ export default function generateStateRecordFromVarList(varList, date = undefined
     if (!(date instanceof Date)) {
       date = new Date(date);
     }
-    state['date'] = date.toISOString();
     state['time'] = date.getTime();
   }
   return state;

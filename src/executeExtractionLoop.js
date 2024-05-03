@@ -1,6 +1,9 @@
 import config from "../config.js";
 import { camelCaseToDash } from "./camelCaseToDash.js";
-import { loadRootDataFile, saveRootDataFile } from "./cli/rootDataFileStorage.js";
+import {
+  loadRootDataFile,
+  saveRootDataFile,
+} from "./cli/rootDataFileStorage.js";
 import { endpointRecord } from "./extract/endpoints.js";
 import getStatisticsVars from "./extract/getStatisticsVars.js";
 import getStatusVars from "./extract/getStatusVars.js";
@@ -24,12 +27,12 @@ export function getLatestStatisticsRecord() {
 }
 
 export function getJoinedStateRecord() {
-  const list = [latestStatusRecord, latestStatisticsRecord].filter(a => a);
+  const list = [latestStatusRecord, latestStatisticsRecord].filter((a) => a);
   const state = {};
   for (const rec of list) {
     for (const key in rec) {
-      if (typeof state[key] === 'object' && state[key]) {
-        state[key] = {...state[key], ...rec[key]};
+      if (typeof state[key] === "object" && state[key]) {
+        state[key] = { ...state[key], ...rec[key] };
       } else {
         state[key] = rec[key];
       }
@@ -43,7 +46,9 @@ export function waitForJoinedStateUpdate() {
   /** @type {Promise<{varName: string, value: any, time: number; oldValue?: any, oldTime?: number}[]>} */
   const promise = new Promise((resolve, reject) => {
     if (waitingResolveList.length > 30) {
-      return reject(new Error('Too many clients are waiting for the state update'));
+      return reject(
+        new Error("Too many clients are waiting for the state update")
+      );
     }
     waitingResolveList.push(resolve);
   });
@@ -69,7 +74,6 @@ function notifyUpdateCallback(list) {
   return true;
 }
 
-
 function getTargetFilePathForVariable(varName, dateStr) {
   const rawFolder = camelCaseToDash(varName.replace(/\W/, "-"))
     .replace(/\"/, "-")
@@ -86,37 +90,40 @@ function getTargetFilePathForVariable(varName, dateStr) {
   return rawFilePath.replace(/\\/g, "/");
 }
 
-async function persistVarRecord(oldRec, newRec, skipComparation = false) {
+async function persistVarRecord(oldRec, newRec, skipObjComparation = false) {
   const actions = await getPersistVarRecordActions(
     oldRec,
     newRec,
-    skipComparation
+    skipObjComparation
   );
   if (actions.length === 0) {
     return;
   }
 
-  const events = actions.map(a => ({
+  const events = actions.map((a) => ({
     varName: a.varName,
-    time: newRec['time'],
+    time: newRec["time"],
     value: a.value,
-    oldTime: oldRec && oldRec["time"] ? oldRec['time'] : undefined,
+    oldTime: oldRec && oldRec["time"] ? oldRec["time"] : undefined,
     oldValue: a.lastValue,
   }));
 
   notifyUpdateCallback(events);
 
+  const updatedFileList = [];
   for (const act of actions) {
     if (act.first) {
       await fs.promises.mkdir(path.dirname(act.filePath), { recursive: true });
     }
     await fs.promises.appendFile(act.filePath, act.text, "utf-8");
+    updatedFileList.push(act.filePath);
   }
+  return updatedFileList;
 }
 async function getPersistVarRecordActions(
   oldRec,
   newRec,
-  skipComparation = false
+  skipObjComparation = false
 ) {
   if (!newRec || !newRec["time"] || typeof newRec["time"] !== "number") {
     throw new Error("Var record without time cannot be persisted");
@@ -134,7 +141,16 @@ async function getPersistVarRecordActions(
    */
   const fileStateRecord = {};
   for (const varName in newRec) {
-    if (varName === "date" || varName === "time") {
+    if (
+      [
+        "date",
+        "time",
+        "extractionInterval",
+        "extractionPeriod",
+        "uptimeInterval",
+        "uptime",
+      ].includes(varName)
+    ) {
       continue;
     }
     const filePath = getTargetFilePathForVariable(varName, newDateStr);
@@ -196,15 +212,14 @@ async function getPersistVarRecordActions(
       interval: oldTime && newTime ? newTime - oldTime : undefined,
     };
     const isMatchingRef = newValue === oldValue;
+    if (isMatchingRef) {
+      continue;
+    }
     const isMatchingJson = isMatchingRef
       ? undefined
       : JSON.stringify(newValue) === JSON.stringify(oldValue);
-
-    if (!skipComparation) {
+    if (!skipObjComparation) {
       const isObj = typeof newValue === "object";
-      if (isMatchingRef) {
-        continue;
-      }
       if (isObj && isMatchingJson) {
         continue;
       }
@@ -224,11 +239,15 @@ async function getPersistVarRecordActions(
 async function saveLatestDataState(type = "status", list, record, date) {
   await saveRootDataFile(
     `latest-${type}.json`,
-    JSON.stringify({
-      list: list.map((a) => a),
-      record,
-      date: date.toISOString(),
-    })
+    JSON.stringify(
+      {
+        list,
+        record,
+        date: date.toISOString(),
+      },
+      null,
+      "  "
+    )
   );
 }
 
@@ -249,7 +268,7 @@ async function loadLatestDataState(type = "status") {
   };
 }
 
-export default async function executeExtractionLoop(isStartTimer = true) {
+export default async function executeExtractionLoop(isLoopMode = true) {
   let sessionId = await loadRootDataFile("session-id.txt");
   const result = await login(sessionId);
   if (result.sessionId !== sessionId) {
@@ -263,7 +282,6 @@ export default async function executeExtractionLoop(isStartTimer = true) {
     !cached.isRedirect &&
     !cached.isUnauthenticated &&
     cached.url.includes(endpointRecord.status);
-
   // First Status
   let status = await getStatusVars(
     sessionId,
@@ -281,6 +299,12 @@ export default async function executeExtractionLoop(isStartTimer = true) {
     const extra = createStatesFromComparation(latestStatusRecord, rec);
     // console.log('Augmented first status:', extra);
     for (const key in extra) {
+      if (rec[key] === extra[key]) {
+        continue;
+      }
+      if (rec[key]) {
+        // throw new Error(`Adding duplicated key "${key}" that already exists to new record (${JSON.stringify(rec[key])} vs ${JSON.stringify(extra[key])})`);
+      }
       rec[key] = extra[key];
     }
   }
@@ -307,6 +331,12 @@ export default async function executeExtractionLoop(isStartTimer = true) {
   if (latestStatisticsRecord) {
     const extra = createStatesFromComparation(latestStatisticsRecord, rec);
     for (const key in extra) {
+      if (rec[key] === extra[key]) {
+        continue;
+      }
+      if (rec[key]) {
+        // throw new Error(`Adding duplicated key "${key}" that already exists to new record (${JSON.stringify(rec[key])} vs ${JSON.stringify(extra[key])})`);
+      }
       rec[key] = extra[key];
     }
   }
@@ -319,7 +349,7 @@ export default async function executeExtractionLoop(isStartTimer = true) {
     statistics.date
   );
 
-  if (!isStartTimer) {
+  if (!isLoopMode) {
     console.log("Extraction process finished");
     return;
   }
@@ -344,30 +374,54 @@ export default async function executeExtractionLoop(isStartTimer = true) {
     isNextStatus = !isNextStatus;
   }, 10_000);
 
+  async function updateStatusData() {
+    const resp = await getStatusVars(sessionId);
+    const newRec = generateStateRecordFromVarList(resp.list, resp.date);
+    const prevRec = latestStatusRecord;
+    const extra = createStatesFromComparation(prevRec, newRec);
+    for (const key in extra) {
+      if (newRec[key] === extra[key]) {
+        continue;
+      }
+      newRec[key] = extra[key];
+    }
+    latestStatusRecord = newRec;
+    await saveLatestDataState(
+      "status",
+      resp.list,
+      latestStatusRecord,
+      resp.date
+    );
+    await persistVarRecord(prevRec, newRec, true);
+    console.log(newRec);
+  }
+  async function updateStatisticsData() {
+    const resp = await getStatisticsVars(sessionId);
+    const newRec = generateStateRecordFromVarList(resp.list, resp.date);
+    const prevRec = latestStatisticsRecord;
+    const extra = createStatesFromComparation(prevRec, newRec);
+    for (const key in extra) {
+      if (newRec[key] === extra[key]) {
+        continue;
+      }
+      newRec[key] = extra[key];
+    }
+    latestStatisticsRecord = newRec;
+    await saveLatestDataState(
+      "statistics",
+      resp.list,
+      latestStatisticsRecord,
+      resp.date
+    );
+    await persistVarRecord(prevRec, newRec, true);
+    console.log(newRec);
+  }
   async function tick() {
     console.log("Fetching", isNextStatus ? "status" : "statistics");
-    let list;
     if (isNextStatus) {
-      list = await getStatusVars(sessionId);
+      await updateStatusData();
     } else {
-      list = await getStatisticsVars(sessionId);
+      await updateStatisticsData();
     }
-    const newRec = generateStateRecordFromVarList(list.list, list.date);
-    const prevRec = isNextStatus ? latestStatusRecord : latestStatisticsRecord;
-    const extra = createStatesFromComparation(prevRec, newRec);
-    console.log(
-      isNextStatus ? "Status" : "Statistics",
-      "augment:",
-      Object.keys(extra)
-    );
-    for (const key in extra) {
-      rec[key] = extra[key];
-    }
-    if (isNextStatus) {
-      latestStatusRecord = newRec;
-    } else {
-      latestStatisticsRecord = newRec;
-    }
-    await persistVarRecord(prevRec, newRec);
   }
 }

@@ -16,7 +16,7 @@ export default async function login(previousSessionId, referer) {
 
   const maintained = previousSessionId && first.sessionId === previousSessionId && s === previousSessionId;
   if (maintained) {
-    console.log("Previous session id maintained on first request:", s);
+    // console.log("Previous session id maintained on first request:", s);
   } else if (previousSessionId) {
     console.log("Previous session id replaced on first request:", s);
   } else if (!previousSessionId) {
@@ -33,7 +33,7 @@ export default async function login(previousSessionId, referer) {
       verify.lineCount <= 30 ||
       verify.sessionId !== s
     );
-    console.log('Maintained session', failed ? 'failed' : 'succeeded','status retrieval');
+    console.log('Maintained session id', failed ? 'was updated' : 'was asserted','during status retrieval');
     await sleep(500);
     if (!failed) {
       return verify;

@@ -118,5 +118,6 @@ export default function isolateVarList(text_or_response) {
     if (duplicatedList.length) {
         throw new Error(`Duplicated variable check returned ${duplicatedList.length}: ${JSON.stringify(duplicatedList, null, '  ')}`);
     }
+    
     return vlist;
 }
