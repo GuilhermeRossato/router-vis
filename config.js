@@ -1,6 +1,7 @@
 const config = {
+  projectPath: "./router-vis",
   port: "49737",
-  projectPath: "D:\\dev\\router-vis"
+  routerHost: 'http://192.168.15.1/',
 };
 
 export default config;

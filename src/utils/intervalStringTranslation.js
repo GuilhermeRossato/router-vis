@@ -6,6 +6,7 @@ export function getSecondsFromIntervalString(dd_hh_mm_ss) {
 
 
 export function getIntervalStringFromSeconds(seconds) {
-  return intMultList.map((m, i) => (Math.floor(parseInt((seconds).toString()) / m) % ([60, 60, 24, 99][i])).toString().padStart(2, '0')).reverse().join(':');
+  const parts = intMultList.map((m, i) => (Math.floor(parseInt((seconds).toString()) / m) % ([60, 60, 24, 99][i])).toString().padStart(i === 3 ? 1 : 2, '0')).reverse();
+  return parts[0] + '.' + parts.slice(1).join(':');
 }
 

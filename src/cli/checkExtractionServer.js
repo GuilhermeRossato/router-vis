@@ -14,9 +14,9 @@ export default async function checkExtractionServer() {
   let status = await send();
   obj.type = 'status';
   if (status.error && status.stage === "network") {
-    console.log("Initializing detached extraction server");
+    console.log("Initializing extraction server");
     startDetachedServer();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       await sleep(200);
       status = await send();
       if (!status.error || status.stage !== "network") {

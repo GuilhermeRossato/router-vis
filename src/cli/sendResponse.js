@@ -1,4 +1,8 @@
+import getStatisticsVars from "../extract/getStatisticsVars.js";
+import getStatusVars from "../extract/getStatusVars.js";
+import login from "../extract/login.js";
 import getIntervalTimeBetweenDates from "../utils/getIntervalTimeBetweenDates.js";
+import { loadRootDataFile, saveRootDataFile } from "./storage.js";
 
 /**
  * Process a client request
@@ -6,17 +10,17 @@ import getIntervalTimeBetweenDates from "../utils/getIntervalTimeBetweenDates.js
  * @returns {Promise<any>}
  */
 export default async function sendResponse(data) {
-  if (data.type === "init" && (data.argv.includes('--restart') || data.argv.includes('--exit') || data.argv.includes('--stop'))) {
+  if (data.type === "exit") {
     console.log('Processing exit request');
-    setTimeout(() => { process.exit(0); }, 10);
+    setTimeout(() => { process.exit(0); }, 100);
     return {
-      message: "exit request"
+      success: true,
+      message: "Exiting"
     }
   }
-  if (data.type === "status" || data.type === "init") {
+  if (data.type === "init") {
     const now = new Date().getTime();
     return {
-      message: "ok",
       pid: process.pid,
       ppid: process.ppid,
       cwd: process.cwd(),
@@ -24,8 +28,22 @@ export default async function sendResponse(data) {
       uptime: getIntervalTimeBetweenDates(now - process.uptime() * 1000, now),
     };
   }
+  if (data.type === "login") {
+    const sessionId = await loadRootDataFile("session-id.txt");
+    const result = await login(sessionId);
+    if (result.sessionId !== sessionId) {
+      await saveRootDataFile("session-id.txt", result.sessionId);
+    }
+    return result;
+  }
+  if (data.type === "load-statistics") {
+    return await getStatisticsVars();
+  }
+  if (data.type === "load-status") {
+    return await getStatusVars();
+  }
   return {
-    message: `unhandled "${data.type}"`,
+    message: `Unhandled type: "${data.type}"`,
     pid: process.pid,
   };
 }
