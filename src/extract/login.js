@@ -1,10 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
 import sleep from "../utils/sleep.js";
 import { endpointRecord } from "./endpoints.js";
 import routerRequest from "./routerRequest.js";
-import config from "../../config.js";
-import asyncTryCatchNull from "../utils/asyncTryCatchNull.js";
+import { getCredentialsFromEnv } from "./getCredentialsFromEnv.js";
 
 export default async function login(previousSessionId, referer) {
   const first = await routerRequest(
@@ -66,34 +63,10 @@ export default async function login(previousSessionId, referer) {
       ])}`
     );
   }
-  const envFilePath = path.resolve(config.projectPath, ".env");
-  const raw = await asyncTryCatchNull(
-    fs.promises.readFile(envFilePath, "utf-8")
-  );
-  let u, p;
-  if (typeof raw === "string") {
-    raw
-      .split("\n")
-      .map((a) => a.trim().split("="))
-      .forEach(([key, value]) => {
-        if (
-          ["u", "user", "username", "router_username"].includes(
-            key.toLowerCase()
-          )
-        ) {
-          u = value;
-        } else if (
-          ["p", "pass", "password", "router_password"].includes(
-            key.toLowerCase()
-          )
-        ) {
-          p = value;
-        }
-      });
-  }
+  const {u, p} = await getCredentialsFromEnv();
   if (!u || !p) {
     throw new Error(
-      `Could not find "ROUTER_USERNAME" or "ROUTER_PASSWORD" variables at "${envFilePath}" for authentication`
+      `Could not find "ROUTER_USERNAME" or "ROUTER_PASSWORD" variables for authentication`
     );
   }
   const loginResponse = await routerRequest(
@@ -123,3 +96,5 @@ export default async function login(previousSessionId, referer) {
   }
   return verify;
 }
+
+

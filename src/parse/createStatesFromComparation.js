@@ -147,11 +147,11 @@ export default function createStatesFromComparation(oldRec, newRec) {
     }
   }
   // Host grouping
-  createHostVars(oldRec, newRec, state);
+  createHostsVars(oldRec, newRec, state);
   return state;
 }
 
-function createHostVars(oldState, newState, state = {}) {
+function createHostsVars(oldState, newState, state = {}) {
   const knownMac = {};
   if (oldState) {
     for (const key in oldState) {

@@ -1,7 +1,7 @@
 import { endpointRecord } from "./endpoints.js";
 import routerRequest from "./routerRequest.js";
 import isolateVarList from "./isolateVarList.js";
-import { loadRootDataFile, saveRootDataFile } from "../cli/storage.js";
+import { loadRootDataFile, saveRootDataFile } from "../cli/rootDataFileStorage.js";
 
 export async function loadRawStatisticsPage(sessionId, referer) {
   if (!sessionId || typeof sessionId !== 'string') {

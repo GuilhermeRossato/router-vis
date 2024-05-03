@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import getDateTimeString from "./getDateTimeString.js";
 
-export default function attachLogToConsole(logFilePath = '') {
+export default function attachLogToConsole(logFilePath = '', showLogSource = true) {
   const log = console.log.bind(console);
   let inside = false;
   const handleLog = (...args) => {
@@ -19,8 +19,10 @@ export default function attachLogToConsole(logFilePath = '') {
           if (!src) {
               src = '?';
           }
-          args.unshift(`- ${src} -`);
-          args.unshift(getDateTimeString().substring(0, 23));
+          if (showLogSource) {
+            args.unshift(`- ${src} -`);
+            args.unshift(getDateTimeString().substring(0, 23));
+          }
           if (logFilePath) {
             fs.appendFileSync(logFilePath, `${args.map(a => typeof a === 'string' ? a : (a instanceof Error ? a.stack : JSON.stringify(a))).join(' ')}\n`, 'utf-8');
           }

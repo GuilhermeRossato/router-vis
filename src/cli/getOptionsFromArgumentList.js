@@ -1,7 +1,11 @@
 const argHandlerRecord = {
+  "--data/--get/-g": (options) => options.data = true,
   "--debug/-d": (options) => options.debug = true,
   "--stop/--shutdown/--exit": (options) => options.shutdown = true,
+  "--restart/--reload": (options) => options.restart = true,
   "--standalone": (options, action) => options.standalone = action,
+  "--logs/--watch/-l": (options) => options.logs = true,
+  "--single/--load": (options) => options.single = true,
 }
 
 /**
@@ -11,7 +15,10 @@ function getOptionsFromArgumentList(argv) {
   const options = {
     debug: false,
     shutdown: false,
+    restart: false,
     standalone: '',
+    logs: false,
+    single: false,
   };
   const errorList = [];
   for (let i = 2; i < argv.length; i++) {
