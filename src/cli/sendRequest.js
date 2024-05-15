@@ -10,8 +10,8 @@ export default async function sendRequest(data) {
   return await new Promise((resolve) => {
     const chunks = [];
     const client = http.request({
-      host: "127.0.0.1",
-      port: config.port,
+      host: config.extractorServer.host || "127.0.0.1",
+      port: parseInt((config.extractorServer.port || "49737").toString()),
       pathname: "/",
       method: "POST",
       headers: {

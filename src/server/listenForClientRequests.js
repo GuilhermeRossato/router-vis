@@ -4,9 +4,9 @@ import config from "../../config.js";
 const debug = false;
 
 /**
- * @param {(data: any) => Promise<any>} handler
+ * @param {(data: any) => Promise<any>} handleClientRequest
  */
-export default function listen(handler) {
+export default function listenForClientRequests(handleClientRequest) {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       if (req.url === "/" && req.method === "GET") {
@@ -28,7 +28,7 @@ export default function listen(handler) {
         }
         try {
           const obj = JSON.parse(text);
-          handler(obj).then(
+          handleClientRequest(obj).then(
             (data) => {
               if (debug) {
                 console.log(

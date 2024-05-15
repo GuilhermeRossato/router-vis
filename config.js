@@ -1,8 +1,10 @@
 const config = {
-  projectPath: ".",
-  port: "49737",
-  routerHost: 'http://192.168.15.1/',
-  showLogSource: false,
+  extractorServer: {
+    host: "localhost",
+    port: "49737"
+  },
+  debugging: true,
+  dataFolderPath: "./data",
 };
 
 export default config;
