@@ -1,24 +1,34 @@
 const argHandlerRecord = {
-  "--data/--get/-g": (options) => options.data = true,
-  "--debug/-d": (options) => options.debug = true,
+  "--data/--get/--full/-g": (options) => options.data = true,
+  "--list/--vars/-l": (options) => options.list = true,
+  "--var/--single/-v": (options, name) => options.single = name,
   "--stop/--shutdown/--exit": (options) => options.shutdown = true,
   "--restart/--reload": (options) => options.restart = true,
   "--standalone": (options, action) => options.standalone = action,
+  "--date": (options, date) => options.date = date,
+  "--filter": (options, name) => options.name.push(name),
   "--logs/--watch/-l": (options) => options.logs = true,
-  "--single/--load": (options) => options.single = true,
+  "--next/--load": (options) => options.next = true,
+  "--debug/-d": (options) => options.debug = true,
 }
 
 /**
- * @param {string[]} argv 
+ * @param {string[]} argv
  */
 function getOptionsFromArgumentList(argv) {
   const options = {
-    debug: false,
+    full: false,
+    list: false,
+    single: false,
+    value: false,
+    name: [],
+    next: false,
+    logs: false,
+    info: false,
     shutdown: false,
     restart: false,
     standalone: '',
-    logs: false,
-    single: false,
+    debug: false,
   };
   const errorList = [];
   for (let i = 2; i < argv.length; i++) {

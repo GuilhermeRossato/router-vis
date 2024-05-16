@@ -6,6 +6,7 @@ import getOptionsFromArgumentList from "./src/cli/getOptionsFromArgumentList.js"
 import sleep from "./src/utils/sleep.js";
 import executeExtractionLoop from "./src/executeExtractionLoop.js";
 import executeDetachedCommand from "./src/utils/executeDetachedCommand.js";
+import { responseHandlerTypeRecord } from "./src/server/sendResponse.js";
 
 let debug = false;
 
@@ -23,14 +24,14 @@ async function init() {
     console.log(options);
   }
   if (options.shutdown || options.restart) {
-    const state = await sendRequest({ type: 'init' });
+    const state = await sendRequest('init');
     if (debug) {
       console.log('First extraction status response:', state);
     }
     if (state.error && state.stage === "network") {
       console.log('Shutdown request failed because the connection could not be created');
     } else {
-      await sendRequest({ type: 'exit' });
+      await sendRequest('exit');
       await sleep(500);
     }
   }
@@ -91,7 +92,7 @@ async function executeInterfaceMode() {
 }
 
 async function sendDataRequest() {
-  const response = await sendRequest({ type: 'data' });
+  const response = await sendRequest('data', {});
   if (response && response.record) {
     console.log('Server data response:');
     console.log(response.record);
@@ -102,7 +103,7 @@ async function sendDataRequest() {
 }
 async function streamExtractionServerLogs() {
   console.log('Streaming extraction logs. Press Ctrl+C to stop.');
-  let logResponse = await sendRequest({ type: 'logs', wait: true, });
+  let logResponse = await sendRequest('logs', { wait: true, });
   while (logResponse && logResponse.logs) {
     if (logResponse.message) {
       process.stdout.write(`[E] [M] ${logResponse.message.trim()}\n`);
@@ -111,7 +112,7 @@ async function streamExtractionServerLogs() {
       process.stdout.write(`[E] ${log.date} - ${log.source} - ${log.text}\n`);
     }
     await sleep(400);
-    logResponse = await sendRequest({ type: 'logs', wait: true, cursor: logResponse.cursor });
+    logResponse = await sendRequest('logs', { wait: true, cursor: logResponse.cursor });
   }
   console.log('Streaming of extraction logs stopped.');
   if (debug) {

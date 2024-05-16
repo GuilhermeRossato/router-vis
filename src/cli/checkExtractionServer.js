@@ -8,13 +8,13 @@ export default async function checkExtractionServer() {
     pid: process.pid,
     argv: process.argv,
   };
-  let status = await sendRequest({type: 'init', ...base});
+  let status = await sendRequest('init', base);
   if (status.error && status.stage === "network") {
     console.log("Initializing extraction server");
     startDetachedServer();
     for (let i = 0; i < 20; i++) {
       await sleep(200);
-      status = await sendRequest({type: 'status', ...base});
+      status = await sendRequest('info', base);
       if (!status.error || status.stage !== "network") {
         break;
       }

@@ -1,5 +1,4 @@
 import config from "../config.js";
-import { camelCaseToDash } from "./camelCaseToDash.js";
 import {
   loadRootDataFile,
   saveRootDataFile,
@@ -12,9 +11,10 @@ import { getPreviousRequestData } from "./extract/routerRequest.js";
 import createStatesFromComparation from "./parse/createStatesFromComparation.js";
 import generateStateRecordFromVarList from "./parse/generateStateRecordFromVarList.js";
 import getDateTimeString from "./utils/getDateTimeString.js";
-import fs, { stat } from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import sleep from "./utils/sleep.js";
+import { getNormalizedVarName } from "./getNormalizedVarName.js";
 
 let latestStatusRecord = null;
 export function getLatestStatusRecord() {
@@ -42,7 +42,7 @@ export function getJoinedStateRecord() {
 }
 
 let waitingResolveList = [];
-export function waitForJoinedStateUpdate() {
+export function waitForJoinedStateUpdate(name) {
   /** @type {Promise<{varName: string, value: any, time: number; oldValue?: any, oldTime?: number}[]>} */
   const promise = new Promise((resolve, reject) => {
     if (waitingResolveList.length > 30) {
@@ -50,7 +50,7 @@ export function waitForJoinedStateUpdate() {
         new Error("Too many clients are waiting for the state update")
       );
     }
-    waitingResolveList.push(resolve);
+    waitingResolveList.push([resolve, reject, name ? getNormalizedVarName(name) : undefined]);
   });
   return promise;
 }
@@ -59,26 +59,39 @@ function notifyUpdateCallback(list) {
   if (waitingResolveList.length === 0) {
     return false;
   }
+  const newList = [];
   try {
-    for (const resolver of waitingResolveList) {
-      try {
-        resolver(list);
-      } catch (err) {
-        console.log(err);
+    for (const [resolver, rejecter, name] of waitingResolveList) {
+      if (name) {
+        const evt = list.find(event => event.name === name);
+        if (evt) {
+          try {
+            resolver(list);
+          } catch (err) {
+            console.log(err);
+            rejecter(err);
+          }
+        } else {
+          newList.push([resolver, rejecter, name]);
+        }
+      } else {
+        try {
+          resolver(list);
+        } catch (err) {
+          console.log(err);
+          rejecter(err);
+        }
       }
     }
   } catch (err) {
     console.log(err);
   }
-  waitingResolveList = [];
+  waitingResolveList = newList;
   return true;
 }
 
 function getTargetFilePathForVariable(varName, dateStr) {
-  const rawFolder = camelCaseToDash(varName.replace(/\W/, "-"))
-    .replace(/\"/, "-")
-    .replace(/(\d)/g, "$1-")
-    .replace(/\-\-+/g, "-");
+  const rawFolder = getNormalizedVarName(varName);
   const folder = rawFolder.endsWith("-")
     ? rawFolder.substring(0, rawFolder.length - 1)
     : rawFolder;
@@ -101,7 +114,7 @@ async function persistVarRecord(oldRec, newRec, skipObjComparation = false) {
   }
 
   const events = actions.map((a) => ({
-    varName: a.varName,
+    name: getNormalizedVarName(a.varName),
     time: newRec["time"],
     value: a.value,
     oldTime: oldRec && oldRec["time"] ? oldRec["time"] : undefined,

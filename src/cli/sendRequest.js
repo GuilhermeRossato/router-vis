@@ -3,10 +3,11 @@ import config from "../../config.js";
 
 /**
  * Send a client request
- * @param {any} data 
- * @returns 
+ * @param {keyof import("../server/sendResponse.js").responseHandlerTypeRecord} type
+ * @param {object} data
+ * @returns
  */
-export default async function sendRequest(data) {
+export default async function sendRequest(type, data = {}) {
   return await new Promise((resolve) => {
     const chunks = [];
     const client = http.request({
@@ -39,7 +40,7 @@ export default async function sendRequest(data) {
         }
       });
     });
-    client.write(JSON.stringify(data));
+    client.write(JSON.stringify({...data, type}));
     client.end();
   });
 }

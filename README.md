@@ -1,24 +1,18 @@
 # Vivo Router Data Vis
 
-A Node.js project to extract and store data from a Vivo Box router server interface.
+A project to extract, parse, store and visualize data from a router's user interface.
 
 ![Execution demo](./images/demo.gif)
 
 # Operation
 
-This program uses the broadly available HTTP server of a local router to authenticate and read its current internal variables. It authenticates with user-provided credentials and handles its session while it watches the internal variables of the router for changes.
+This program authenticates on the HTTP server of a router and extracts its status information, usage statistics, and configuration.
 
-When changes are detected they are persisted locally on this project's root data folder (`./data`) in easily interpretable JSON files
+The user-provided credentials for authentication are loaded from the `ROUTER_USERNAME` and `ROUTER_PASSWORD` environment variables, which can also be defined at a `.env` file (A sample file exists at `.env.sample`).
 
-## Usage
-
-After downloading this project you must configure the `.env` file or set the credential variables for this program to successfully communicate with the router.
-
-You may also rename the `.env.sample` to `.env` and define the `ROUTER_USERNAME` and the `ROUTER_PASSWORD` variables for the environment.
+A background extraction server maintains the cookie-based session while it watches the variables for changes. When variables are updated they are saved to the `./data/` folder in `.jsonl` files.
 
 ## Arguments
-
-Argument handling is simple and processed at [getOptionsFromArgumentList.js](./src/cli/getOptionsFromArgumentList.js)
 
 ```
 --data               Get the current state of the router variables
@@ -30,6 +24,8 @@ Argument handling is simple and processed at [getOptionsFromArgumentList.js](./s
 --standalone once    Executes a single extraction without the execution server  
 --standalone loop    Executes the extraction loop directly, without starting the execution server
 ```
+
+Argument handling is processed at [getOptionsFromArgumentList.js](./src/cli/getOptionsFromArgumentList.js)
 
 ## Motivation
 
