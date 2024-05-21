@@ -1,7 +1,7 @@
-import attachLogToConsole from "./utils/attachLogToConsole.js";
+import attachToConsole from "./utils/attachToConsole.js";
 import config from "../config.js";
-import listen from "./server/listen.js";
 import sendResponse from "./server/sendResponse.js";
+import createDataServer from "./server/createDataServer.js";
 import executeExtractionLoop from "./executeExtractionLoop.js";
 
 if (typeof config.projectPath !== 'string') {
@@ -9,12 +9,16 @@ if (typeof config.projectPath !== 'string') {
 }
 
 const logFilePath = `${config.projectPath}\\server.log`;
-attachLogToConsole(logFilePath);
+attachToConsole('log', logFilePath, true);
+
+if (!config.debug) {
+  console.debug = () => {}
+}
 
 async function init() {
-  console.log('Server process started');
-  await listen(sendResponse);
-  console.log('Server process listening');
+  console.debug('Extraction server started');
+  await createDataServer(sendResponse);
+  console.debug('Extraction server listening');
   await executeExtractionLoop();
 }
 

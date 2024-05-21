@@ -1,4 +1,4 @@
-import attachLogToConsole from "./src/utils/attachLogToConsole.js";
+import attachToConsole from "./src/utils/attachToConsole.js";
 import config from "./config.js";
 import checkExtractionServer from "./src/cli/checkExtractionServer.js";
 import sendRequest from "./src/cli/sendRequest.js";
@@ -15,7 +15,7 @@ if (typeof config.projectPath !== 'string') {
 }
 
 const logFilePath = `${config.projectPath}\\client.log`;
-attachLogToConsole(logFilePath, config.showLogSource);
+attachToConsole("log", logFilePath, config.debug);
 
 async function init() {
   const options = getOptionsFromArgumentList(process.argv);
