@@ -3,6 +3,8 @@ import { endpointRecord } from "./endpoints.js";
 import routerRequest from "./routerRequest.js";
 import { getCredentialsFromEnv } from "./getCredentialsFromEnv.js";
 
+const debug = false;
+
 export default async function login(previousSessionId, referer) {
   const first = await routerRequest(
     endpointRecord.root,
@@ -18,9 +20,9 @@ export default async function login(previousSessionId, referer) {
   if (maintained) {
     // console.log("Previous session id maintained on first request:", s);
   } else if (previousSessionId) {
-    console.log("Previous session id replaced on first request:", s);
+    debug && console.log("Previous session id replaced on first request:", s);
   } else if (!previousSessionId) {
-    console.log("Session id was obtained on first request", s);
+    debug && console.log("Session id was obtained on first request", s);
   }
 
   // Check for instant success
@@ -33,7 +35,7 @@ export default async function login(previousSessionId, referer) {
       verify.lineCount <= 30 ||
       verify.sessionId !== s
     );
-    console.log('Maintained session id', failed ? 'was updated' : 'was asserted','during status retrieval');
+    debug && console.log('Maintained session id', failed ? 'was updated' : 'was asserted','during status retrieval');
     await sleep(500);
     if (!failed) {
       return verify;
@@ -45,9 +47,9 @@ export default async function login(previousSessionId, referer) {
 
   // Loop until it stabilizes
   if (resp.sessionId !== s) {
-    console.log("Router updated session at first status request");
+    debug && console.log("Router updated session at first status request");
     for (let i = 0; i < 4 && s !== resp.sessionId; i++) {
-      console.log(
+      debug && console.log(
         `Response ${i}/4 updated session from ${s} to ${resp.sessionId}`
       );
       s = resp.sessionId;
@@ -76,7 +78,7 @@ export default async function login(previousSessionId, referer) {
     `loginUsername=${u}&loginPassword=${p}`
   );
   if (s !== loginResponse.sessionId) {
-    console.log(
+    debug && console.log(
       `Login response changed session from ${s} to ${loginResponse.sessionId}`
     );
     s = loginResponse.sessionId;

@@ -34,7 +34,7 @@ function defaultParser(varName, content) {
   return state;
 }
 
-export default function generateStateRecordFromVarList(varList, date = undefined) {
+export default function generateStateRecordFromVarList(varList) {
   /** @type {Record<string, any>[]} */
   const list = []
   for (const { name, content } of varList) {
@@ -48,12 +48,6 @@ export default function generateStateRecordFromVarList(varList, date = undefined
     for (const key in record) {
       state[key] = record[key];
     }
-  }
-  if (date !== undefined) {
-    if (!(date instanceof Date)) {
-      date = new Date(date);
-    }
-    state['time'] = date.getTime();
   }
   return state;
 };

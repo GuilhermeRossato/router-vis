@@ -2,7 +2,7 @@ import attachToConsole from "./utils/attachToConsole.js";
 import config from "../config.js";
 import sendResponse from "./server/sendResponse.js";
 import createDataServer from "./server/createDataServer.js";
-import executeExtractionLoop from "./executeExtractionLoop.js";
+import executeExtraction from "./executeExtraction.js";
 
 if (typeof config.projectPath !== 'string') {
   throw new Error('Invalid project path');
@@ -16,10 +16,10 @@ if (!config.debug) {
 }
 
 async function init() {
-  console.debug('Extraction server started');
+  console.log('Extraction server started');
   await createDataServer(sendResponse);
-  console.debug('Extraction server listening');
-  await executeExtractionLoop();
+  console.log('Extraction server listening');
+  await executeExtraction();
 }
 
 init().catch(err => { console.log('Failed'); console.log(err); process.exit(1); });

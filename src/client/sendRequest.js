@@ -12,7 +12,7 @@ export default async function sendRequest(type, data = {}) {
     const chunks = [];
     const client = http.request({
       host: "127.0.0.1",
-      port: config.port,
+      port: config.serverPort,
       pathname: "/",
       method: "POST",
       headers: {

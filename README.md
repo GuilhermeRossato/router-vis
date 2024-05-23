@@ -4,13 +4,17 @@ A project to extract, parse, store and visualize data from a router's user inter
 
 ![Execution demo](./images/demo.gif)
 
-# Operation
+# Description
 
 This program authenticates on the HTTP server of a router and extracts its status information, usage statistics, and configuration.
 
 The user-provided credentials for authentication are loaded from the `ROUTER_USERNAME` and `ROUTER_PASSWORD` environment variables, which can also be defined at a `.env` file (A sample file exists at `.env.sample`).
 
 A background extraction server maintains the cookie-based session while it watches the variables for changes. When variables are updated they are saved to the `./data/` folder in `.jsonl` files.
+
+## Usage
+
+Executing the main node script will authenticate and straem updates to stdout:
 
 ## Arguments
 

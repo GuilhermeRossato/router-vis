@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import config from "../../config.js";
 import asyncTryCatchNull from "../utils/asyncTryCatchNull.js";
-import getDateTimeString from "../utils/getDateTimeString.js";
 
 function convertLineToTriple(line) {
   const space = line.indexOf(' ');
@@ -32,7 +31,8 @@ export default async function getExtractionServerLogs(after = null) {
   if (!after) {
     return triples;
   }
-  const afterTime = (after instanceof Date ? after : new Date(after)).getTime();
+  const afterDate = (after instanceof Date ? after : new Date(after));
+  const afterTime = afterDate.getTime();
   let i;
   for (i = triples.length - 1; i >= 0; i--) {
     if (!triples[i].date) {

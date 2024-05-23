@@ -105,8 +105,13 @@ function createSpeedStatisticsStates(oldRec, newRec, state) {
     }
   }
 }
-
-export default function createStatesFromComparation(oldRec, newRec) {
+/**
+ * @param {*} oldRec 
+ * @param {*} newRec 
+ * @param {Record<string, any>} [state]
+ * @returns {Record<string, any>}
+ */
+export default function createStatesFromComparation(oldRec, newRec, state = {}) {
   if (typeof oldRec !== "object" || oldRec.list instanceof Array) {
     throw new Error("Invalid first state parameter record");
   }
@@ -122,8 +127,6 @@ export default function createStatesFromComparation(oldRec, newRec) {
     throw new Error("Missing or invalid time at state record");
   }
   const isStatistics = newRec["ethIntfSts"] || newRec["wlanIntfSts"];
-  /** @type {Record<string, any>} */
-  const state = {};
   const oldTime = oldRec["time"];
   const newTime = newRec["time"];
   const elapsedSec = (newTime - oldTime) / 1000;

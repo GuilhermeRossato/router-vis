@@ -1,33 +1,34 @@
-import getStatisticsVars from "../extract/getStatisticsVars.js";
-import getStatusVars from "../extract/getStatusVars.js";
 import login from "../extract/login.js";
 import getIntervalTimeBetweenDates from "../utils/getIntervalTimeBetweenDates.js";
 import {
-  loadRootDataFile,
-  saveRootDataFile,
-} from "../cli/rootDataFileStorage.js";
+  loadRootTextFile,
+  saveRootTextFile,
+} from "../data/rootTextFileStorage.js";
 import getExtractionServerLogs from "./getExtractionServerLogs.js";
 import sleep from "../utils/sleep.js";
-import { getJoinedStateRecord, waitForJoinedStateUpdate } from "../executeExtractionLoop.js";
+import { getJoinedStateRecord, waitForJoinedStateUpdate } from "../executeExtraction.js";
 import getDateTimeString from "../utils/getDateTimeString.js";
 import { getVarDataRangeList } from "./getVarDataRangeList.js";
 import { getVarListStateAtDate } from "./getVarListStateAtDate.js";
+import routerRequest from "../extract/routerRequest.js";
+import isolateVarList from "../extract/isolateVarList.js";
+import generateStateRecordFromVarList from "../parse/generateStateRecordFromVarList.js";
+import { endpointRecord } from "../extract/endpoints.js";
 
 export const responseHandlerTypeRecord = {
-  "data": dataRequestHandler,
+  "read": readRequestHandler,
   "list": listRequestHandler,
-  "value": valueRequestHandler,
   "next": nextRequestHandler,
   "logs": logsRequestHandler,
   "info": infoRequestHandler,
-  "standalone-login": loginRequestHandler,
-  "standalone-status": statusRequestHandler,
-  "standalone-statistics": statisticsRequestHandler,
+  "login": loginRequestHandler,
+  "status": statusRequestHandler,
+  "statistics": statisticsRequestHandler,
   "exit": exitRequestHandler,
 }
 
 
-async function dataRequestHandler(data) {
+async function readRequestHandler(read) {
   const rec = getJoinedStateRecord();
   return {
     record: rec,
@@ -39,15 +40,6 @@ async function listRequestHandler(data) {
 
   return {
     list,
-  }
-}
-
-async function valueRequestHandler(data) {
-  const time = data.time ? data.time : (data.date ? new Date(data.date).getTime() : new Date().getTime());
-
-  const result = await getVarListStateAtDate(time, data.name);
-  return {
-    list: result,
   }
 }
 
@@ -87,7 +79,6 @@ async function logsRequestHandler(data) {
 }
 
 async function infoRequestHandler() {
-
   const now = new Date().getTime();
   const data = getJoinedStateRecord();
   return {
@@ -106,20 +97,43 @@ async function infoRequestHandler() {
 }
 
 async function loginRequestHandler(data) {
-  const sessionId = await loadRootDataFile("session-id.txt");
+  const sessionId = await loadRootTextFile("session-id.txt");
   const result = await login(sessionId);
   if (result.sessionId !== sessionId) {
-    await saveRootDataFile("session-id.txt", result.sessionId);
+    await saveRootTextFile("session-id.txt", result.sessionId);
   }
   return result;
 }
 
 async function statusRequestHandler(data) {
-  return await getStatusVars();
+  return await performExtractionHandler(endpointRecord.status, data);
 }
 
 async function statisticsRequestHandler(data) {
-  return await getStatisticsVars();
+  return await performExtractionHandler(endpointRecord.statistics, data);
+}
+
+async function performExtractionHandler(endpoint, data) {
+  let sessionId = await loadRootTextFile("session-id.txt");
+  const routerResponse = await routerRequest(
+    endpoint,
+    sessionId
+  );
+  if (routerResponse.sessionId !== sessionId) {
+    sessionId = routerResponse.sessionId;
+    await saveRootTextFile("session-id.txt", sessionId);
+  }
+  const list = isolateVarList(routerResponse);
+  const rec = generateStateRecordFromVarList(list);
+  const filtered = {
+    date: getDateTimeString(routerResponse.date),
+    ...applyArgumentFilterOnRecord(data, rec)
+  }
+  return filtered;
+}
+
+async function applyArgumentFilterOnRecord(data, rec) {
+  return rec;
 }
 
 async function exitRequestHandler(data) {
@@ -139,7 +153,7 @@ async function exitRequestHandler(data) {
  * @returns {Promise<any>}
  */
 export default async function sendResponse(data) {
-  const handler = responseHandlerTypeRecord[data.type];
+  const handler = responseHandlerTypeRecord[data?.type];
   if (!handler) {
     return {
       request: data,
