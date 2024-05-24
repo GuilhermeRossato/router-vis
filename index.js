@@ -45,8 +45,8 @@ const unhandledArguments = process.argv.slice(2).filter((text, i) => {
     config.logs = true;
     return;
   }
-  if (["--speed", "--kbps", "--mbps"].includes(text)) {
-    config.speed = text;
+  if (["--speed", "--kbps", "--mbps", "--mpbs"].includes(text)) {
+    config.speed = text.replace('--mpbs', '--mbps');
     return;
   }
   if (["--usage", "--use", "--kb", "--mb"].includes(text)) {
@@ -63,10 +63,10 @@ if (unhandledArguments.length) {
 }
 
 const logFilePath = `${config.projectPath}\\client.log`;
-attachToConsole("log", logFilePath, config.debug);
+attachToConsole("log", logFilePath, config.debug, config.debug);
 
 if (config.debug) {
-  attachToConsole("debug", logFilePath, config.debug);
+  attachToConsole("debug", logFilePath, config.debug, config.debug);
 } else {
   console.debug = () => {};
 }
@@ -80,11 +80,13 @@ async function execShutdown() {
         config.extractionServerHost || "127.0.0.1"
       }:${config.extractionServerPort}/`
     );
+    return;
   }
   if (response.error) {
     console.log(
-      "Shutdown request failed: " + (response.message || "Unknown error")
+      "Shutdown request failed: " + (response.message || response.stage || (typeof response.error === 'string' ? response.error : '') || "Unknown error")
     );
+    return;
   }
   console.debug("Extraction server shutdown:", response);
   await sleep(100);
@@ -97,7 +99,9 @@ async function execShutdown() {
     console.log(
       "Shutdown request failed: Extraction server responded a status request after shutdown request"
     );
+    return;
   }
+  console.log("Extraction server has shutdown");
 }
 
 async function init() {
@@ -127,7 +131,7 @@ async function init() {
   if (config.logs) {
     acts.push(executeStreamExtractionServerLogs);
   }
-  if (acts.length === 0) {
+  if (acts.length === 0 && !config.shutdown && !config.restart) {
     acts.push(executeUsageStream.bind(null, "speed", false));
   }
   if (acts.length !== 1) {

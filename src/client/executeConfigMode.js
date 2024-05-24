@@ -80,7 +80,7 @@ export function executeConfigMode(callback) {
     if (list) {
       const [key, query, def] = list;
       const sufix = `[${config[key] ? "current" : "default"} ${JSON.stringify(
-        config[key] || def
+        key === 'routerPass' ? '(omitted)' : (config[key] || def || 'none')
       )}]`;
       console.log(`Specify the ${query}: ${sufix}`);
       process.stdout.write(query + " > ");

@@ -10,11 +10,13 @@ This program authenticates on the HTTP server of a router and extracts its statu
 
 The user-provided credentials for authentication are loaded from the config file which is populated when the program first executes.
 
-The data extraction is done by a background server that maintains a session, watching variables for changes and saving locally to the `./data/` folder.
+The data extraction process maintains a session and watch variables for changes to save them locally at the `./data/` folder in `.jsonl` format.
 
-## Usage
+## How to use
 
-Download and execute the main script with `npm run start`, `yarn start` or `node index.js`.
+Download and execute the main script with `npm run start`, `yarn start` or `node index.js`. The initial setup will execute, the extraction will begin, and the router usage information will be printed continuously.
+
+The extraction is done in a separated process that will remain executing even after stopping the command (with `Ctrl+C` or `Ctrl+D`). If you don't want that specify the `--standalone` arg.
 
 ## Config Arguments
 
@@ -35,7 +37,7 @@ Default arguments can be configured at the root file `./config.js`.
 
 The interface of modern user-customer routers provide simple HTTP interfaces with status information such as fiber optical signal stregth, routing, interfaces data, and most importantly: the amount of bytes sent and received from each interface.
 
-The router does not provide how its data changes over time so I reverse-engineered the HTTP interface and implemented a process to extract, parse, save, and visualize the usage over time to keep track of the network usage. The primary objective was to experiment with project organization and learn some data-related skills.
+My router does not provide its data over time so I reverse-engineered its HTTP interface and implemented a process to extract, save, and visualize usage over time to get some network usage insights but the primary objective was to experiment with project organization while learning some data-related skills.
 
 ## Dependencies
 
