@@ -13,7 +13,11 @@ const unhandledArguments = process.argv.slice(2).filter((text, i) => {
     config.debug = true;
     return;
   }
-  if (["--config", "--settings", "--cfg", "--setup", "--init", "-c"].includes(text)) {
+  if (
+    ["--config", "--settings", "--cfg", "--setup", "--init", "-c"].includes(
+      text
+    )
+  ) {
     config.config = true;
     return;
   }
@@ -25,7 +29,15 @@ const unhandledArguments = process.argv.slice(2).filter((text, i) => {
     config.restart = true;
     return;
   }
-  if (["--standalone", "--alone", "--no-server", "--serverless", "--direct"].includes(text)) {
+  if (
+    [
+      "--standalone",
+      "--alone",
+      "--no-server",
+      "--serverless",
+      "--direct",
+    ].includes(text)
+  ) {
     config.standalone = true;
     return;
   }
@@ -59,13 +71,14 @@ if (config.debug) {
   console.debug = () => {};
 }
 
-
 async function execShutdown() {
   console.log("Requesting extraction server to shutdown");
   const response = await sendRequest("exit");
   if (response.error && response.stage === "network") {
     console.log(
-      `Shutdown request failed: No server listening at http://${config.extractionServerHost || "127.0.0.1"}:${config.extractionServerPort}/`
+      `Shutdown request failed: No server listening at http://${
+        config.extractionServerHost || "127.0.0.1"
+      }:${config.extractionServerPort}/`
     );
   }
   if (response.error) {
@@ -73,7 +86,7 @@ async function execShutdown() {
       "Shutdown request failed: " + (response.message || "Unknown error")
     );
   }
-  console.debug('Extraction server shutdown:', response);
+  console.debug("Extraction server shutdown:", response);
   await sleep(100);
   let state = await sendRequest("status");
   if (!state.error || state.stage !== "network") {
@@ -81,7 +94,9 @@ async function execShutdown() {
     state = await sendRequest("status");
   }
   if (!state.error || state.stage !== "network") {
-    console.log('Shutdown request failed: Extraction server responded a status request after shutdown request');
+    console.log(
+      "Shutdown request failed: Extraction server responded a status request after shutdown request"
+    );
   }
 }
 
@@ -109,8 +124,11 @@ async function init() {
   if (config.usage) {
     acts.push(executeUsageStream.bind(null, "usage", config.usage === "--mb"));
   }
-  if (config.logs || acts.length === 0) {
+  if (config.logs) {
     acts.push(executeStreamExtractionServerLogs);
+  }
+  if (acts.length === 0) {
+    acts.push(executeUsageStream.bind(null, "speed", false));
   }
   if (acts.length !== 1) {
     console.debug("Executing", acts.length, "client actions");
