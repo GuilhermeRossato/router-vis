@@ -79,6 +79,6 @@ export default function createDataServer(handler) {
       });
     });
     server.on("error", reject);
-    server.listen(config.serverPort, () => resolve(server));
+    server.listen(config.extractionServerPort, () => resolve(server));
   });
 }

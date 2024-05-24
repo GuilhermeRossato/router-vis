@@ -11,8 +11,8 @@ export default async function sendRequest(type, data = {}) {
   return await new Promise((resolve) => {
     const chunks = [];
     const client = http.request({
-      host: "127.0.0.1",
-      port: config.serverPort,
+      host: config.extractionServerHost || "127.0.0.1",
+      port: config.extractionServerPort,
       pathname: "/",
       method: "POST",
       headers: {

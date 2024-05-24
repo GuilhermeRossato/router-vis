@@ -1,130 +1,150 @@
 import attachToConsole from "./src/utils/attachToConsole.js";
 import config from "./config.js";
-import checkExtractionServer from "./src/cli/checkExtractionServer.js";
-import sendRequest from "./src/cli/sendRequest.js";
-import getOptionsFromArgumentList from "./src/cli/getOptionsFromArgumentList.js";
+import checkExtractionServer from "./src/client/checkExtractionServer.js";
+import sendRequest from "./src/client/sendRequest.js";
 import sleep from "./src/utils/sleep.js";
-import executeExtractionLoop from "./src/executeExtractionLoop.js";
-import executeDetachedCommand from "./src/utils/executeDetachedCommand.js";
-import { responseHandlerTypeRecord } from "./src/server/sendResponse.js";
+import executeExtraction from "./src/executeExtraction.js";
+import { streamUsageVariableState } from "./src/client/streamUsageVariableState.js";
+import { streamExtractionServerLogs } from "./src/client/streamExtractionServerLogs.js";
+import { executeConfigMode } from "./src/client/executeConfigMode.js";
 
-let debug = false;
+const unhandledArguments = process.argv.slice(2).filter((text, i) => {
+  if (["--debug", "-d"].includes(text)) {
+    config.debug = true;
+    return;
+  }
+  if (["--config", "--settings", "--cfg", "--setup", "--init", "-c"].includes(text)) {
+    config.config = true;
+    return;
+  }
+  if (["--shutdown", "--stop", "--disable"].includes(text)) {
+    config.shutdown = true;
+    return;
+  }
+  if (["--restart", "--reset"].includes(text)) {
+    config.restart = true;
+    return;
+  }
+  if (["--standalone", "--alone", "--no-server", "--serverless", "--direct"].includes(text)) {
+    config.standalone = true;
+    return;
+  }
+  if (["--logs", "--log", "-l", "--internal"].includes(text)) {
+    config.logs = true;
+    return;
+  }
+  if (["--speed", "--kbps", "--mbps"].includes(text)) {
+    config.speed = text;
+    return;
+  }
+  if (["--usage", "--use", "--kb", "--mb"].includes(text)) {
+    config.usage = text;
+    return;
+  }
+  return true;
+});
 
-if (typeof config.projectPath !== 'string') {
-  throw new Error('Invalid project path');
+if (unhandledArguments.length) {
+  throw new Error(
+    `Unrecognized arguments: ${JSON.stringify(unhandledArguments)}`
+  );
 }
 
 const logFilePath = `${config.projectPath}\\client.log`;
 attachToConsole("log", logFilePath, config.debug);
 
+if (config.debug) {
+  attachToConsole("debug", logFilePath, config.debug);
+} else {
+  console.debug = () => {};
+}
+
+
+async function execShutdown() {
+  console.log("Requesting extraction server to shutdown");
+  const response = await sendRequest("exit");
+  if (response.error && response.stage === "network") {
+    console.log(
+      `Shutdown request failed: No server listening at http://${config.extractionServerHost || "127.0.0.1"}:${config.extractionServerPort}/`
+    );
+  }
+  if (response.error) {
+    console.log(
+      "Shutdown request failed: " + (response.message || "Unknown error")
+    );
+  }
+  console.debug('Extraction server shutdown:', response);
+  await sleep(100);
+  let state = await sendRequest("status");
+  if (!state.error || state.stage !== "network") {
+    await sleep(300);
+    state = await sendRequest("status");
+  }
+  if (!state.error || state.stage !== "network") {
+    console.log('Shutdown request failed: Extraction server responded a status request after shutdown request');
+  }
+}
+
 async function init() {
-  const options = getOptionsFromArgumentList(process.argv);
-  debug = options.debug;
-  if (debug) {
-    console.log(options);
+  if (config.shutdown || config.restart) {
+    await execShutdown();
   }
-  if (options.shutdown || options.restart) {
-    const state = await sendRequest('init');
-    if (debug) {
-      console.log('First extraction status response:', state);
-    }
-    if (state.error && state.stage === "network") {
-      console.log('Shutdown request failed because the connection could not be created');
-    } else {
-      await sendRequest('exit');
-      await sleep(500);
-    }
-  }
-  
-  if (options.restart || (!options.standalone && !options.shutdown)) {
-    if (!options.shutdown) {
-      if (debug) {
-        console.log('Asserting the execution of the extraction server (not standalone mode)');
-      }
+  if (config.restart || !config.standalone) {
+    if (!config.shutdown) {
+      console.debug("Asserting the execution of the extraction server");
       const status = await checkExtractionServer();
-      if (debug) {
-        console.log('First extraction status response:', status);
-      }
+      console.debug("First extraction status response:", status);
     }
   }
 
   const acts = [];
-
-  if (options.standalone === 'loop') {
-    acts.push(executeExtractionLoop.bind(null, true));
-  } else if (options.standalone === 'once') {
-    acts.push(executeExtractionLoop.bind(null, false));
-  } else if (options.standalone) {
-    throw new Error(`Invalid standalone command: "${options.standalone}"`);
+  if (config.standalone) {
+    acts.push(executeExtraction);
   }
-
-  if (options.logs) {
-    acts.push(streamExtractionServerLogs);
+  if (config.speed) {
+    acts.push(
+      executeUsageStream.bind(null, "speed", config.speed === "--mbps")
+    );
   }
-
-  if (options.data) {
-    acts.push(sendDataRequest);
+  if (config.usage) {
+    acts.push(executeUsageStream.bind(null, "usage", config.usage === "--mb"));
   }
-
-  if (acts.length === 0 && !options.shutdown && !options.standalone) {
-    if (debug) {
-      console.log('Executing interface mode because no actions is specified');
-    }
-    return await executeInterfaceMode();
+  if (config.logs || acts.length === 0) {
+    acts.push(executeStreamExtractionServerLogs);
   }
-
-  if (acts.length === 0) {
-    console.log('Nothing to do. Program will exit.');
-    process.exit(0);
+  if (acts.length !== 1) {
+    console.debug("Executing", acts.length, "client actions");
   }
-
-  if (debug) {
-    console.log('Executing', acts.length, 'client actions');
-  }
-  await Promise.all(acts.map(a => a()));
+  await Promise.all(acts.map((f) => f()));
 }
 
-async function executeInterfaceMode() {
-  const url = `http://${config.host || '127.0.0.1'}:${config.port}/`;
-  const cmd = `start ${url}`;
-  console.log('Opening interface at:', url);
-  executeDetachedCommand(cmd);
+async function executeUsageStream(streamType, displayMegaBytes) {
+  console.log("Streaming", streamType, "data. Press Ctrl+C to stop.");
+
+  streamUsageVariableState(streamType, displayMegaBytes).catch((err) => {
+    console.log("Streaming", streamType, "caused an error:");
+    console.log(err);
+    process.exit(1);
+  });
 }
 
-async function sendDataRequest() {
-  const response = await sendRequest('data', {});
-  if (response && response.record) {
-    console.log('Server data response:');
-    console.log(response.record);
-  } else {
-    console.log('Unexpected server response:');
-    console.log(response);
-  }
-}
-async function streamExtractionServerLogs() {
-  console.log('Streaming extraction logs. Press Ctrl+C to stop.');
-  let logResponse = await sendRequest('logs', { wait: true, });
-  while (logResponse && logResponse.logs) {
-    if (logResponse.message) {
-      process.stdout.write(`[E] [M] ${logResponse.message.trim()}\n`);
-    }
-    for (const log of logResponse.logs) {
-      process.stdout.write(`[E] ${log.date} - ${log.source} - ${log.text}\n`);
-    }
-    await sleep(400);
-    logResponse = await sendRequest('logs', { wait: true, cursor: logResponse.cursor });
-  }
-  console.log('Streaming of extraction logs stopped.');
-  if (debug) {
-    console.log('Last server response:');
-    console.log({...logResponse, logs: logResponse && logResponse.logs instanceof Array ? logResponse.logs.length : null});
-  }
-  process.exit(1);
+async function executeStreamExtractionServerLogs() {
+  const streamType = "extraction server logs";
+  console.log("Streaming", streamType, ". Press Ctrl+C to stop.");
+
+  streamExtractionServerLogs().catch((err) => {
+    console.log("Streaming", streamType, "caused an error:");
+    console.log(err);
+    process.exit(1);
+  });
 }
 
-
-init().catch((err) => {
-  console.log("Failed");
-  console.log(err);
-  process.exit(1);
-});
+if (config.config) {
+  executeConfigMode(init);
+} else {
+  init().catch((err) => {
+    console.log("Failed");
+    console.log(err);
+    process.exit(1);
+  });
+}
