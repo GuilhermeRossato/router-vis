@@ -1,84 +1,91 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import config from "../../config.js";
+import { config, env } from "../../settings.js";
 
 const debug = false;
 
 /**
- * @param {(data: any) => Promise<any>} handler
+ * @param {(type: string, data: any) => Promise<any>} handler
  */
 export default function createDataServer(handler) {
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
-      if (req.url === '/favicon.ico') {
-        res.writeHead(404).end();
-        return;
+      if (req.url === "/" || req.url === "/index.html") {
+        return res.end("Router Vis Extractor - Data Extractor Server\n");
       }
-      if ((["/", "/index", "/index.htm", "/index.html", "/request.js", "/script.js"].includes(req.url)) && req.method === "GET") {
-        const dashboardFolderPath = path.resolve(config.projectPath, 'src', 'dashboard');
-        const isIndexHtml = req.url === '/' || req.url.startsWith('/i') || req.url.endsWith('.html');
-        const targetPath = path.resolve(dashboardFolderPath, (isIndexHtml ? '/index.html' : req.url).substring(1));
-        if (!fs.existsSync(targetPath)) {
-          return res.end("Router Vis - Data Server");
-        }
-        res.setHeader("Content-Type", isIndexHtml ? 'text/html; charset=utf-8' : 'text/javascript; charset=utf-8');
-        res.statusCode = 200;
-        return res.end(fs.readFileSync(targetPath, 'utf-8'));
+      if (!req.url.startsWith("/api/")) {
+        res.statusCode = 404;
+        return res.end('Router Vis Extractor - Expected "api/" route prefix at request\n');
       }
+      const type = req.url.substring(1).split("/")[1].split("?")[0];
       res.setHeader("Content-Type", "application/json; charset=utf-8");
       const chunks = [];
       req.on("data", (data) => chunks.push(data));
       req.on("end", () => {
-        const text = Buffer.concat(chunks).toString("utf-8");
-        if (!text || text[0] !== "{") {
-          res.statusCode = 500;
-          res.end(
-            JSON.stringify({
-              error: `Invalid request data (${text.length === 0 ? 'empty' : `char code ${text.charCodeAt(0)}"`})`,
-            })
-          );
-          return;
-        }
         try {
-          const obj = JSON.parse(text);
-          handler(obj).then(
+          let text = "";
+          if (chunks.length && chunks[0]?.length) {
+            text = Buffer.concat(chunks).toString("utf-8");
+          }
+          if (text && (!text.startsWith("{") || !text.includes("}"))) {
+            res.statusCode = 500;
+            res.end(
+              JSON.stringify({
+                error: `Invalid request body ${
+                  text.length === 0 ? "(empty)" : `starting with char code ${text.charCodeAt(0)}"`
+                }`,
+                body: text,
+              }),
+            );
+            return;
+          }
+          const obj = text ? JSON.parse(text) : null;
+          if (obj && req.url.indexOf("?") !== -1) {
+            const urlArgPairs = req.url
+              .substring(req.url.indexOf("?") + 1)
+              .split("&")
+              .map((a) => a.split("="))
+              .filter((p) => p[0] && p[1] && !obj[p[0]]);
+            for (const [key, value] of urlArgPairs) {
+              obj[key.toLowerCase()] = obj[key.toLowerCase()] || value;
+            }
+          }
+          handler(type, obj).then(
             (data) => {
               if (debug) {
-                console.log(
-                  "Received",
-                  JSON.stringify(obj),
-                  "Reply",
-                  JSON.stringify(data)
+                process.stdout.write(
+                  `Received ${JSON.stringify(obj)} Replied ${JSON.stringify(data)}`,
                 );
               }
+              res.statusCode = 200;
               res.end(JSON.stringify(data));
             },
             (err) => {
               if (debug) {
-                console.log(
-                  "Received",
-                  JSON.stringify(obj),
-                  "Threw",
-                  JSON.stringify(err)
+                process.stdout.write(
+                  `Received ${JSON.stringify(obj)} Threw ${JSON.stringify(err)}`,
                 );
-                res.statusCode = 500;
               }
+              res.statusCode = 500;
               res.end(JSON.stringify({ error: err.stack }));
-            }
+            },
           );
         } catch (err) {
+          console.log("Server response failed:");
           console.log(err.stack);
           res.statusCode = 500;
           res.end(
             JSON.stringify({
               error: "Invalid data",
-            })
+            }),
           );
         }
       });
     });
     server.on("error", reject);
-    server.listen(config.extractionServerPort, () => resolve(server));
+    server.listen(env.INTERNAL_DATA_SERVER_PORT, env.INTERNAL_DATA_SERVER_HOST, () =>
+      resolve(server),
+    );
   });
 }

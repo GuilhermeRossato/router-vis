@@ -1,6 +1,6 @@
 import { getVarDataRangeList } from "./getVarDataRangeList.js";
 import path from "node:path";
-import config from "../../config.js";
+import config from "../../settings.js";
 import { readJsonlDataFile } from "./readJsonlDataFile.js";
 
 export async function getVarListStateAtDate(time, nameFilter) {

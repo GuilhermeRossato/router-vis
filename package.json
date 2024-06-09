@@ -1,13 +1,13 @@
 {
-  "name": "router-vis",
+  "name": "router-vis-extractor",
   "type": "module",
   "version": "1.0.0",
-  "description": "",
+  "description": "A project to extract, save and provide data from a router's state over time for the router-vis project",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Guilherme Rossato",
   "license": "ISC"
 }

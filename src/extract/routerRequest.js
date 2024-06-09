@@ -1,4 +1,4 @@
-import config from "../../config.js";
+import config from "../../settings.js";
 import { endpointRecord } from "./endpoints.js";
 
 import fs from "node:fs";
@@ -10,6 +10,9 @@ let requestCount = 0;
 let previousRequestData = null;
 
 export default async function routerRequest(url, sessionId, referer, body) {
+  if (typeof url !== "string" || url[0] !== '/') {
+    throw new Error(`Unexpected url parameter of type "${typeof url}"`);
+  }
   if (sessionId === null || sessionId === undefined || sessionId === "") {
     sessionId = "";
   }

@@ -1,5 +1,5 @@
 import getDateTimeString from "../utils/getDateTimeString.js";
-import config from "../../config.js";
+import config from "../../settings.js";
 import asyncTryCatchNull from "../utils/asyncTryCatchNull.js";
 import fs from "node:fs";
 import path from "node:path";

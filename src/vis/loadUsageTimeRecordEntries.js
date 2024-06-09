@@ -1,4 +1,4 @@
-import { listVarDataFileTimes } from "../data/varFileStorage.js";
+import { listVarDataFileTimes } from "../storage/varFileStorage.js";
 
 /**
  * @typedef {{

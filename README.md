@@ -1,18 +1,23 @@
-# Vivo Router Data Vis
+# Router Vis Extractor
 
-A project to extract, parse, store and visualize data from a router's user interface.
+A project to extract, save and provide data from a router's state over time.
 
 ![Execution demo](./images/demo.gif)
 
 # Description
 
-This program authenticates on the HTTP server of a router and extracts its status information, usage statistics, and configuration.
+This program uses the default HTTP interface provided by routes to authenticate and read status information, connected hosts, and usage statistics. 
 
-The user-provided credentials for authentication are loaded from the config file which is populated when the program first executes.
+A long-running background process extracts and watches variables for changes, saving updates to csv files separated in folders by type and hour (`./data/{type}/{variable}/{yyyy-mm-dd-hh}.csv`).
 
-The data extraction process maintains a session and watch variables for changes to save them locally at the `./data/` folder in `.jsonl` format.
+The extraction uses a session id that can be set with the `--session` argument or loaded from `./data/session-id.txt`. If a valid one is not found it performs authentication (login) with user-provided credentials configured in the `ROUTER_USERNAME` and `ROUTER_PASSWORD` environment variables. The sample file `.env.sample` can be populated and renamed to `.env`
 
 ## How to use
+
+Download with [git](https://www.git-scm.com/) and start it with [node.js](https://nodejs.org/), no dependencies are needed:
+
+```
+git clone 
 
 Download and execute the main script with `npm run start`, `yarn start` or `node index.js`. The initial setup will execute, the extraction will begin, and the router usage information will be printed continuously.
 

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { config } from "../../config.js";
+import { config } from "../../settings.js";
 
 export function executeConfigMode(callback) {
   let timeoutTimer = setTimeout(() => {
@@ -14,9 +14,9 @@ export function executeConfigMode(callback) {
   let stage = 0;
 
   
-  if (!config.projectPath) {
-    config.projectPath = guessProjectPath();
-    console.debug('Guessed project path', config.projectPath);
+  if (!config.dataPath) {
+    config.dataPath = guessProjectPath();
+    console.debug('Guessed project path', config.dataPath);
   }
 
   const stages = [
@@ -31,7 +31,7 @@ export function executeConfigMode(callback) {
   ];
 
   const skipProjectPathQuery =
-    config.projectPath && !process.argv.includes("--config");
+    config.dataPath && !process.argv.includes("--config");
 
   if (skipProjectPathQuery) {
     stages.shift();
@@ -44,7 +44,7 @@ export function executeConfigMode(callback) {
   function finalizeConfigMode() {
     process.stdin.off("data", printQuery);
     process.stdin.pause();
-    const configFilePath = path.resolve(config.projectPath || ".", "config.js");
+    const configFilePath = path.resolve(config.dataPath || ".", "config.js");
     let source = fs
       .readFileSync(configFilePath, "utf-8")
       .replace(/\'\'/g, '""');

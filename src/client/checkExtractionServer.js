@@ -1,11 +1,9 @@
 import sleep from "../utils/sleep.js";
-import sendRequest from "./sendRequest.js";
 import startDetachedServer from "./startDetachedServer.js";
 import fs from "node:fs";
-import child_process from "node:child_process";
-import path from "node:path";
-import config from "../../config.js";
+import {config} from "../../settings.js";
 import asyncTryCatchNull from "../utils/asyncTryCatchNull.js";
+import { sendRequest } from "./sendRequest.js";
 
 async function startServerAndWatchLogs() {
   const logFilePath = `${config.projectPath}\\server.log`;

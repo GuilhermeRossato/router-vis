@@ -1,5 +1,6 @@
 import fs from "node:fs";
-import config from "../../config.js";
+import path from "node:path";
+import {config, dataFileName} from "../../settings.js";
 import asyncTryCatchNull from "../utils/asyncTryCatchNull.js";
 
 function convertLineToTriple(line) {
@@ -21,26 +22,26 @@ function convertLineToTriple(line) {
   return {date: date ? new Date(date) : null, source, text};
 }
 
-export default async function getExtractionServerLogs(after = null) {
-  const logFilePath = `${config.projectPath}\\server.log`;
-  const text = await asyncTryCatchNull(fs.promises.readFile(logFilePath, 'utf-8'));
-  if (typeof text !== 'string') {
-    return [];
+export default async function getExtractionServerLogs(offset = 0, buffer = Buffer.alloc(16384)) {
+  let read = 0;
+  let size = 0;
+  let list = [];
+  const logFilePath = path.resolve(config.dataPath, dataFileName.serverLog);
+  const stat = await asyncTryCatchNull(fs.promises.stat(logFilePath));
+  if (!stat || stat instanceof Error || stat.size === 0 || stat.isDirectory()) {
+    return {size, read, list, buffer};
   }
-  const triples = text.trim().replace(/\r/g, '').split('\n').map(convertLineToTriple);
-  if (!after) {
-    return triples;
+  if (offset && offset === stat.size) {
+    return {size, read, list, buffer};
   }
-  const afterDate = (after instanceof Date ? after : new Date(after));
-  const afterTime = afterDate.getTime();
-  let i;
-  for (i = triples.length - 1; i >= 0; i--) {
-    if (!triples[i].date) {
-      continue;
-    }
-    if (triples[i].date.getTime() <= afterTime) {
-      break;
-    }
+  const f = await asyncTryCatchNull(fs.promises.open(logFilePath, 'r'));
+  if (!f || f instanceof Error) {
+    return {size, read, list, buffer};
   }
-  return triples.slice(i + 1);
+  const result = await f.read({position: Math.max(0, offset-3), buffer});
+  read = result.bytesRead;
+  const text = buffer.toString('utf-8').trim().replace(/\r/g, '');
+  await f.close();
+  list = text.substring(Math.max(3, text.indexOf('\n') + 1)).split('\n').map(convertLineToTriple);
+  return {size, read, list, buffer};
 }
