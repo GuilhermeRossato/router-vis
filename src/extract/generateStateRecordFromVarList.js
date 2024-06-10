@@ -1,13 +1,14 @@
-import { enetStatus as parseEnetStatus } from "./enetStatus.js";
-import { opticalPower as parseOpticalPower } from "./opticalPower.js";
-import { parseIntfSts } from "./parseIntfSts.js";
-import { parseLanHostList } from "./parseLanHostList.js";
-import { parseOrgLanHostList } from "./parseOrgLanHostList.js";
-import { parseWlanAssociatedList } from "./parseWlanAssociatedList.js";
-import { parseWlanSimpleAssociatedList } from "./parseWlanSimpleAssociatedList.js";
-import { parsePppUptime } from "./parsePppUptime.js";
-import { parseStaList } from "./parseStaList.js";
-import { parseMacList } from "./parseMacList.js";
+import { enetStatus as parseEnetStatus } from "../parse/enetStatus.js";
+import { opticalPower as parseOpticalPower } from "../parse/opticalPower.js";
+import { parseIntfSts } from "../parse/parseIntfSts.js";
+import { parseLanHostList } from "../parse/parseLanHostList.js";
+import { parseOrgLanHostList } from "../parse/parseOrgLanHostList.js";
+import { parseWlanAssociatedList } from "../parse/parseWlanAssociatedList.js";
+import { parseWlanSimpleAssociatedList } from "../parse/parseWlanSimpleAssociatedList.js";
+import { parsePppUptime } from "../parse/parsePppUptime.js";
+import { parseStaList } from "../parse/parseStaList.js";
+import { parseMacList } from "../parse/parseMacList.js";
+import getDateTimeString from "../utils/getDateTimeString.js";
 
 const varParserRecord = {
   orgLanHostList: parseOrgLanHostList,
@@ -34,7 +35,7 @@ function defaultParser(varName, content) {
   return state;
 }
 
-export default function generateStateRecordFromVarList(varList) {
+export default function generateStateRecordFromVarList(varList, time) {
   /** @type {Record<string, any>[]} */
   const list = []
   for (const { name, content } of varList) {
@@ -43,11 +44,18 @@ export default function generateStateRecordFromVarList(varList) {
     list.push(parsed);
   }
   /** @type {Record<string, any>} */
-  const state = {};
+  const rec = {};
+  if (time) {
+    rec.date = getDateTimeString(time);
+  }
   for (const record of list) {
     for (const key in record) {
-      state[key] = record[key];
+      rec[key] = record[key];
     }
   }
-  return state;
+  if (time) {
+    rec.date = getDateTimeString(time);
+    rec.time = time;
+  }
+  return rec;
 };

@@ -1,7 +1,6 @@
 import path from "node:path";
-import { config } from "../../settings.js";
+import { config, env } from "../../settings.js";
 import { loadEnvSync } from "../utils/loadEnvSync.js";
-import { env } from "node:process";
 
 export async function getLoginCredentials() {
   loadEnvSync(

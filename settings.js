@@ -15,12 +15,14 @@ export const config = {
 
 export const modes = {
   help: false,
-  config: false,
+  status: false,
   restart: false,
   shutdown: false,
-  logs: [0, "client", "server", "watch"][0],
-  speed: [0, "gbps", "mbps", "kbps", "bps"][0],
-  usage: [0, "mb", "kb", "b"][0],
+  server: false,
+  logs: false,
+  api: false,
+  speed: [false, "bps", "kbps", "mbps", "gbps"][0],
+  usage: [false, "b", "kb", "mb", "gb"][0],
 };
 
 export const dataFileName = {

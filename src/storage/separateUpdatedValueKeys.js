@@ -1,4 +1,4 @@
-import { ignoredKeyList } from "./constants.js";
+import { ignoredKeyList } from "./ignoredKeyList.js";
 
 export default function separateUpdatedValueKeys(oldRec, newRec) {
   const removedKeys = [];
@@ -13,7 +13,7 @@ export default function separateUpdatedValueKeys(oldRec, newRec) {
       removedKeys.push(varName);
     }
   }
-  const sameKeys = [];
+  const unchangedKeys = [];
   if (oldRec) {
     for (const varName in oldRec) {
       if (ignoredKeyList.includes(varName)) {
@@ -25,7 +25,7 @@ export default function separateUpdatedValueKeys(oldRec, newRec) {
       if (newRec[varName] !== oldRec[varName]) {
         continue;
       }
-      sameKeys.push(varName);
+      unchangedKeys.push(varName);
     }
   }
   const createdKeys = [];
@@ -36,7 +36,7 @@ export default function separateUpdatedValueKeys(oldRec, newRec) {
     if (removedKeys.includes(varName)) {
       continue;
     }
-    if (sameKeys.includes(varName)) {
+    if (unchangedKeys.includes(varName)) {
       continue;
     }
     if (!oldRec || oldRec[varName] === undefined) {
@@ -49,7 +49,7 @@ export default function separateUpdatedValueKeys(oldRec, newRec) {
       continue;
     }
     if (removedKeys.includes(varName) ||
-      sameKeys.includes(varName) ||
+      unchangedKeys.includes(varName) ||
       createdKeys.includes(varName)) {
       continue;
     }
@@ -58,6 +58,5 @@ export default function separateUpdatedValueKeys(oldRec, newRec) {
     }
     updatedKeys.push(varName);
   }
-  // console.debug({ removedKeys, sameKeys, createdKeys, updatedKeys });
-  return { removedKeys, sameKeys, createdKeys, updatedKeys };
+  return { removedKeys, unchangedKeys, createdKeys, updatedKeys };
 }

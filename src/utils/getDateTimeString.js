@@ -9,7 +9,10 @@ const mmOffset = Math.floor(Math.abs(tzHrOffset) % 60).toString().padStart(2, '0
  * @returns {string} "YYYY-MM-DD HH:MM:SS.zzz"
  */
 export default function getDateTimeString(date = new Date(), includeOffset = false) {
-  if (typeof date === 'string' && (date.length === 10 || ) && (date.length === 10 || (date.length === 19 && date[10] === ' ') || (date.length > 19 && date.length <= 23 && date[10] === ' ' && date[20] === '.'))) {
+  if (typeof date === 'string' && date.startsWith('20') && date[3] === '-' && date[5] === '-') {
+    if (date.length === ('2024-04-04 04'.length)) {
+      date = date + ':00:00';
+    }
     const ending = date.trim().substring(date.length - 7);
     if (!ending.includes('+') && !ending.includes('-') && !ending.includes('Z') && !ending.includes('G')) {
       const guess = new Date(`${date} ${hhOffset}:${mmOffset}`);

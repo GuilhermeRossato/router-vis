@@ -3,10 +3,10 @@ import getDateTimeString from "./getDateTimeString.js";
 import path from "node:path";
 import { config } from "../../settings.js";
 
-const addSource = true;
-const addPid = true;
-const addDate = true;
-const addHour = true;
+let addSource = false;
+let addPid = true;
+let addDate = true;
+let addHour = true;
 
 export default function attachToConsole(method = "log", logFileName, ...extra) {
   if (!logFileName && config.debug) {
@@ -46,11 +46,11 @@ export default function attachToConsole(method = "log", logFileName, ...extra) {
         args.unshift(`- ${src} -`);
       }
       const [date, hour] = getDateTimeString().substring(0, 23).split(" ");
-      if (addDate) {
-        args.unshift(date);
-      }
       if (addHour) {
         args.unshift(hour);
+      }
+      if (addDate) {
+        args.unshift(date);
       }
       if (logFilePath) {
         let text;
