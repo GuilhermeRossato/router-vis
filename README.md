@@ -52,17 +52,17 @@ Default arguments can be configured at the root file `./settings.js`.
 
 ## Data Server / API
 
-After executing the program once you can access the API by default at http://127.0.0.1:49737/.
+After executing the program once you can access the API by default at http://127.0.0.1:49736/.
 
 You can use the `--api` / `--open` argument to launch your browser to it. The host and port of the internal server can be replaced by setting the `INTERNAL_DATA_SERVER_HOST` and `INTERNAL_DATA_SERVER_PORT` environment variables.
 
-The API server routes can be listed at the [index](http://127.0.0.1:49737/api/index) endpoint. To get server status you can use the [status](http://127.0.0.1:49737/api/status) endpoint.
+The API server routes can be listed at the [index](http://127.0.0.1:49736/api/index) endpoint. To get server status you can use the [status](http://127.0.0.1:49736/api/status) endpoint.
 
-To read data from variables you can use the [data](http://127.0.0.1:49737/api/data) endpoint. If you define the `type` and the `src` variables it will list the variable names available. The response object will contain the acceptable (and alternatives) values at the `options` property.
+To read data from variables you can use the [data](http://127.0.0.1:49736/api/data) endpoint. If you define the `type` and the `src` variables it will list the variable names available. The response object will contain the acceptable (and alternatives) values at the `options` property.
 
-For example, to read the latest usage data you can specify the `type`, `src` and `name` as `object`, `statistics`, `eth-intf-sts` at the [data](http://127.0.0.1:49737/api/data?type=object&src=statistics&name=eth-intf-sts) endpoint. You can also specify the `section` parameter to get updates of different interval. The `section` property at the response (inside `options` property) will contains the alternative values.
+For example, to read the latest usage data you can specify the `type`, `src` and `name` as `object`, `statistics`, `eth-intf-sts` at the [data](http://127.0.0.1:49736/api/data?type=object&src=statistics&name=eth-intf-sts) endpoint. You can also specify the `section` parameter to get updates of different interval. The `section` property at the response (inside `options` property) will contains the alternative values.
 
-To read the latest extraction server logs you can use the [logs](http://127.0.0.1:49737/api/logs) endpoint.
+To read the latest extraction server logs you can use the [logs](http://127.0.0.1:49736/api/logs) endpoint.
 
 ## Motivation / Objective
 

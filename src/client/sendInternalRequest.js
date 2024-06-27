@@ -8,7 +8,7 @@ import { config, env } from "../../settings.js";
  */
 export default async function sendInternalRequest(type = "", data = null) {
   const host = env.INTERNAL_DATA_SERVER_HOST || "127.0.0.1";
-  const port = env.INTERNAL_DATA_SERVER_PORT || "49737";
+  const port = env.INTERNAL_DATA_SERVER_PORT || "49736";
   const hostname = `${host}:${port}`;
   let stage = "start";
   let status = 0;
